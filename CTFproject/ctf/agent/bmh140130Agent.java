@@ -1,57 +1,50 @@
 package ctf.agent;
 
+//numDeaths
+//Node(coordinate,badboolean,1 parent,3 children)
+//queue = path to where you died
+//list = of nodes we determine to be bad 
+
 import ctf.common.*;
 
 public class bmh140130Agent extends Agent {
+	
+	static boolean immediate = true;
+	static boolean ranged = false;
+
 	// implements Agent.getMove() interface
-		public int getMove( AgentEnvironment inEnvironment ) {
+	public int getMove( AgentEnvironment inEnvironment )
+	{
 			// booleans describing direction of goal
 			// goal is either enemy flag, or our base
-			boolean goalNorth;
-			boolean goalSouth;
-			boolean goalEast;
-			boolean goalWest;
+			boolean [] goalFlags = getGoalFlags(inEnvironment);
+			boolean goalNorth = goalFlags[0];
+			boolean goalSouth = goalFlags[1];
+			boolean goalEast = goalFlags[2];
+			boolean goalWest = goalFlags[3];
 
 			
-			if( !inEnvironment.hasFlag() ) {
-				// make goal the enemy flag
-				goalNorth = inEnvironment.isFlagNorth( 
-					inEnvironment.ENEMY_TEAM, false );
 			
-				goalSouth = inEnvironment.isFlagSouth( 
-					inEnvironment.ENEMY_TEAM, false );
-			
-				goalEast = inEnvironment.isFlagEast( 
-					inEnvironment.ENEMY_TEAM, false );
-			
-				goalWest = inEnvironment.isFlagWest( 
-					inEnvironment.ENEMY_TEAM, false );
-				}
-			else {
-				// we have enemy flag.
-				// make goal our base
-				goalNorth = inEnvironment.isBaseNorth( 
-					inEnvironment.OUR_TEAM, false );
-			
-				goalSouth = inEnvironment.isBaseSouth( 
-					inEnvironment.OUR_TEAM, false );
-			
-				goalEast = inEnvironment.isBaseEast( 
-					inEnvironment.OUR_TEAM, false );
-			
-				goalWest = inEnvironment.isBaseWest( 
-					inEnvironment.OUR_TEAM, false );
-				}
 			
 			// now we have direction booleans for our goal	
 			
 			// check for immediate obstacles blocking our path		
-			boolean obstNorth = inEnvironment.isObstacleNorthImmediate();
-			boolean obstSouth = inEnvironment.isObstacleSouthImmediate();
-			boolean obstEast = inEnvironment.isObstacleEastImmediate();
-			boolean obstWest = inEnvironment.isObstacleWestImmediate();
-			
-			
+			boolean obstNorth = inEnvironment.isObstacleNorthImmediate()
+				|| inEnvironment.isAgentNorth(inEnvironment.OUR_TEAM, immediate);	
+			boolean obstSouth = inEnvironment.isObstacleSouth
+			Immediate()
+				|| inEnvironment.isAgentSouth(inEnvironment.OUR_TEAM, immediate);
+			boolean obstEast = inEnvironment.isObstacleEastImmediate()
+				|| inEnvironment.isAgentEast(inEnvironment.OUR_TEAM, immediate);
+			boolean obstWest = inEnvironment.isObstacleWestImmediate()
+				|| inEnvironment.isAgentWest(inEnvironment.OUR_TEAM, immediate);
+				
+ 
+			//EDITEDITEDITEDIT
+			//Set it up to avoid teammates.
+
+
+
 			// if the goal is north only, and we're not blocked
 			if( goalNorth && ! goalEast && ! goalWest && !obstNorth ) {
 				// move north
@@ -144,5 +137,40 @@ public class bmh140130Agent extends Agent {
 				// completely blocked!
 				return AgentAction.DO_NOTHING;
 				}	
-			}
+	}
+
+	public boolean[] getGoalFlags (AgentEnvironment inEnvironment)
+	{
+		boolean [] goalFlags = {false,false,false,false};
+		if( !inEnvironment.hasFlag() ) {
+				// make goal the enemy flag
+				goalFlags[0] = inEnvironment.isFlagNorth( 
+					inEnvironment.ENEMY_TEAM, ranged );
+			
+				goalFlags[1] = inEnvironment.isFlagSouth( 
+					inEnvironment.ENEMY_TEAM, ranged );
+			
+				goalFlags[2] = inEnvironment.isFlagEast( 
+					inEnvironment.ENEMY_TEAM, ranged );
+			
+				goalFlags[3] = inEnvironment.isFlagWest( 
+					inEnvironment.ENEMY_TEAM, ranged );
+				}
+			else {
+				// we have enemy flag.
+				// make goal our base
+				goalFlags[0] = inEnvironment.isBaseNorth( 
+					inEnvironment.OUR_TEAM, ranged );
+			
+				goalFlags[1] = inEnvironment.isBaseSouth( 
+					inEnvironment.OUR_TEAM, ranged );
+			
+				goalFlags[2] = inEnvironment.isBaseEast( 
+					inEnvironment.OUR_TEAM, ranged );
+			
+				goalFlags[3] = inEnvironment.isBaseWest( 
+					inEnvironment.OUR_TEAM, ranged );
+				}
+		return goalFlags;
+	}
 }
