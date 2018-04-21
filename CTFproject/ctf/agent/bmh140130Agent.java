@@ -140,11 +140,12 @@ public class bmh140130Agent extends Agent {
 				return AgentAction.DO_NOTHING;			
 		}
 
-		//add candidate nodes to the tree, based on if there is obstacle
+		//add candidate nodes to the tree, based on if there is obstacle and if location not on bad locations 
+		ArrayList<Node> children = new ArrayList<Node>();
 
 
-		// if nothing to add, and we didn't get the flag in this path, avoid (we don't have flag yet)
-
+		// if nothing to add, and we didn't get the flag in this path, avoid (we don't have flag yet) and add to bad paths
+		//Backtrack
 
 
 
@@ -246,12 +247,18 @@ public class bmh140130Agent extends Agent {
 		//heuristic
 		for(Node child : children)
 		{
-			if(child.direction == 'N')
-
+			if(child.direction == 'N' && goalNorth)
+				selectedNodes.add(child);
+			else if(child.direction == 'S' && goalSouth)
+				selectedNodes.add(child);
+			else if(child.direction == 'E' && goalEast)
+				selectedNodes.add(child);
+			else if(child.direction == 'W' && goalWest)
+				selectedNodes.add(child);
 		}
 
 		//final choice
-
+		int randomIndex = (int)(Math.random()*selectedNodes.size());
 		if(selectedNodes.size() == 0)
 			return children.get(randomIndex);
 		else if(selectedNodes.size() == 1)
