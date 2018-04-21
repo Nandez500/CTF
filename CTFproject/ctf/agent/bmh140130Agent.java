@@ -10,12 +10,16 @@ import java.util.Queue;
 import ctf.common.*;
 
 public class bmh140130Agent extends Agent {
+
+
 	static boolean immediate = true;
 	static boolean ranged = false;
-	private ArrayList<Node> badNodes;
-	Node firstNode = Node({0,0},NULL,'X');
+	boolean startedAtNorth = false;
+	Node firstParent = null;
+	Node firstNode = new Node(0,0,firstParent,'X');
 	Node currentNode = firstNode;
-	private Stack <Node> lStack = new Stack <Node> (initialNode);
+	private ArrayList<Node> badNodes = new ArrayList<Node>();
+	private Stack <Node> lStack = new Stack <Node> ();
 
 
 
@@ -25,194 +29,61 @@ public class bmh140130Agent extends Agent {
 
 		// booleans describing direction of goal
 		// goal is either enemy flag, or our base
-		boolean [] goalFlags = getGoalFlags(inEnvironment);
-		boolean goalNorth = goalFlags[0];
-		boolean goalSouth = goalFlags[1];
-		boolean goalEast = goalFlags[2];
-		boolean goalWest = goalFlags[3];
-	
-		// now we have direction booleans for our goal	
-			
-		// check for immediate obstacles blocking our path		
+
+
 		boolean obstNorth = inEnvironment.isObstacleNorthImmediate();
 		boolean obstSouth = inEnvironment.isObstacleSouthImmediate();
-		boolean obstEast = inEnvironment.isObstacleEastImmediate();
-		boolean obstWest = inEnvironment.isObstacleWestImmediate();
-		boolean inBaseColumn = !inEnvironment.isBaseEast(inEnvironment.OUR_TEAM,ranged) 	
-			&& !inEnvironment.isBaseWest(inEnvironment.OUR_TEAM,ranged)
-			&& (inEnvironment.isBaseNorth(inEnvironment.OUR_TEAM,ranged)
-			|| inEnvironment.isBaseSouth(inEnvironment.OUR_TEAM,ranged));
-
-
 		//set up first state (if we are pointing to first node)
-		if(currentNode == firstNode))
+		if(currentNode == firstNode)
 		{
 			if(obstNorth)
 			{
-				currentNode.startedAtNorth = true;
+				startedAtNorth = true;
 			}
 
 			else if(obstSouth)
 			{
-				currentNode.startedAtNorth = false;
+				startedAtNorth = false;
 			}
 		}
 
-		boolean topCorner = obstNorth && inHomeColumn;
-		boolean bottomCorner = obstSouth && inHomeColumn;
-		//currentNode to firstNode if we're in the initial state. i.e. obstacle below/above and same column as base.
-		if(topHomeCorner && currentNode.startedAtNorth)
-		{
-			currentNode = firstNode;
-		}
-		else if(bottomHomeCorner && !currentNode.startedAtNorth)
-		{
-			currentNode = firstNode;
-		}
+		
+		resetIfAtSpawn(inEnvironment);
 
-		/*
-		//--------------------------------------------------
-		I hope to entirely phase out this code.
-
-		// if the goal is north only, and we're not blocked
-			if( goalNorth && ! goalEast && ! goalWest && !obstNorth ) {
-				// move north
-				return AgentAction.MOVE_NORTH;
-				}
-				
-			// if goal both north and east
-			if( goalNorth && goalEast ) {
-				// pick north or east for move with 50/50 chance
-				if( Math.random() < 0.5 && !obstNorth ) {
-					return AgentAction.MOVE_NORTH;
-					}
-				if( !obstEast ) {	
-					return AgentAction.MOVE_EAST;
-					}
-				if( !obstNorth ) {	
-					return AgentAction.MOVE_NORTH;
-					}
-				}	
-				
-			// if goal both north and west	
-			if( goalNorth && goalWest ) {
-				// pick north or west for move with 50/50 chance
-				if( Math.random() < 0.5 && !obstNorth ) {
-					return AgentAction.MOVE_NORTH;
-					}
-				if( !obstWest ) {	
-					return AgentAction.MOVE_WEST;
-					}
-				if( !obstNorth ) {	
-					return AgentAction.MOVE_NORTH;
-					}	
-				}
-			
-			// if the goal is south only, and we're not blocked
-			if( goalSouth && ! goalEast && ! goalWest && !obstSouth ) {
-				// move south
-				return AgentAction.MOVE_SOUTH;
-				}
-			
-			// do same for southeast and southwest as for north versions	
-			if( goalSouth && goalEast ) {
-				if( Math.random() < 0.5 && !obstSouth ) {
-					return AgentAction.MOVE_SOUTH;
-					}
-				if( !obstEast ) {
-					return AgentAction.MOVE_EAST;
-					}
-				if( !obstSouth ) {
-					return AgentAction.MOVE_SOUTH;
-					}
-				}
-					
-			if( goalSouth && goalWest && !obstSouth ) {
-				if( Math.random() < 0.5 ) {
-					return AgentAction.MOVE_SOUTH;
-					}
-				if( !obstWest ) {
-					return AgentAction.MOVE_WEST;
-					}
-				if( !obstSouth ) {
-					return AgentAction.MOVE_SOUTH;
-					}
-				}
-			
-			// if the goal is east only, and we're not blocked
-			if( goalEast && !obstEast ) {
-				return AgentAction.MOVE_EAST;
-				}
-			
-			// if the goal is west only, and we're not blocked	
-			if( goalWest && !obstWest ) {
-				return AgentAction.MOVE_WEST;
-				}	
-			
-			// otherwise, make any unblocked move
-			if( !obstNorth ) {
-				return AgentAction.MOVE_NORTH;
-				}
-			else if( !obstSouth ) {
-				return AgentAction.MOVE_SOUTH;
-				}
-			else if( !obstEast ) {
-				return AgentAction.MOVE_EAST;
-				}
-			else if( !obstWest ) {
-				return AgentAction.MOVE_WEST;
-				}	
-			else {
-				// completely blocked!
-				return AgentAction.DO_NOTHING;			
-		}
-	*/
-		ArrayList<Node> children;
-
+		//EXPAND NODE, based on if there is obstacle and if location not on bad locations 
 		if(!currentNode.expanded)
-		{
-			//add candidate nodes to the tree, based on if there is obstacle and if location not on bad locations 
-			children = expandNode(currentNode);
+		{	
+			currentNode.children = expandCurrentNode(inEnvironment);
 		}
-
+		
+		//PRUNE BAD LOCATION NODES FROM EXISTING CHILDREN
 		else
 		{
-			//prune out bad nodes from children
-			children = currentNode.children;
+			for(int i = 0 ; i < currentNode.children.size(); i++)
+			{
+				for(Node badNode: badNodes)
+					if(currentNode.children.get(i).locationY == badNode.locationY 
+						&& currentNode.children.get(i).locationX == badNode.locationX)
+					{
+						currentNode.children.remove(i);
+					}
+			}
 		}
 
-		//Backtrack if nothing to add, mark as bad path if no flag is here
+		
 
-		//if can't backtrack, do nothing.
-
-
-		//select from good candidate locations, and if not blocked by agent
-		currentNode = selectNode(inEnvironment, children);
-
-		//move agent
-		if(currentNode.direction == 'N')
+		//BACKTRACK IF NO CHILDREN, ADD TO LIST OF BAD NODES
+		if(currentNode.children.size() == 0)
 		{
-			return AgentAction.MOVE_NORTH;
+			return backtrack(inEnvironment);	
 		}
-		if(currentNode.direction == 'S')
-		{
-			return AgentAction.MOVE_SOUTH;
-		}
-		if(currentNode.direction == 'E')
-		{
-			return AgentAction.MOVE_EAST;
-		}
-		if(currentNode.direction == 'W')
-		{
-			return AgentAction.MOVE_WEST;
-		}
+
+		System.out.println(currentNode.locationX +"," + currentNode.locationY);
+		System.out.println(currentNode.direction);
+		return advance(inEnvironment, currentNode.children);
+
 	}
 
-
-	public int getMoveBeforeFlag(AgentEnvironment inEnvironment)
-	{
-
-	}
 	
 	public boolean[] getGoalFlags (AgentEnvironment inEnvironment)
 	{
@@ -249,46 +120,172 @@ public class bmh140130Agent extends Agent {
 		return goalFlags;
 	}
 
-	public ArrayList<Node> expandNode(AgentEnvironment inEnvironment, Node currentNode)
+	//SET CURRENTNODE TO FIRST NODE IF AGENT IS BACK AT SPAWN
+	public void resetIfAtSpawn(AgentEnvironment inEnvironment)
 	{
-		//
+		//WHICH SIDE OF BASE DO WE SPAWN
+		boolean obstNorth = inEnvironment.isObstacleNorthImmediate();
+		boolean obstSouth = inEnvironment.isObstacleSouthImmediate();
 
+		//ARE WE IN HOME COLUMN
+		boolean inHomeColumn = !inEnvironment.isBaseEast(inEnvironment.OUR_TEAM,ranged) 	
+			&& !inEnvironment.isBaseWest(inEnvironment.OUR_TEAM,ranged)
+			&& (inEnvironment.isBaseNorth(inEnvironment.OUR_TEAM,ranged)
+			|| inEnvironment.isBaseSouth(inEnvironment.OUR_TEAM,ranged));
+
+
+		//ARE WE WHERE WE SPAWNED ORIGINALLY. RESET TO FIRSTNODE IF SO.
+		boolean topHomeCorner = obstNorth && inHomeColumn;
+		boolean bottomHomeCorner = obstSouth && inHomeColumn;
+		if(topHomeCorner && startedAtNorth)
+		{
+			currentNode = firstNode;
+		}
+		else if(bottomHomeCorner && !startedAtNorth)
+		{
+			currentNode = firstNode;
+		}
+
+	}
+
+	public int backtrack(AgentEnvironment inEnvironment)
+	{
+
+			//backtrack
+			badNodes.add(currentNode);
+			if(currentNode.direction == 'N' && !inEnvironment.isAgentNorth(inEnvironment.OUR_TEAM, immediate))
+			{
+				currentNode = currentNode.parent;
+				return AgentAction.MOVE_SOUTH;
+			}
+			else if(currentNode.direction == 'S' && !inEnvironment.isAgentSouth(inEnvironment.OUR_TEAM, immediate))
+			{
+				currentNode = currentNode.parent;
+				return AgentAction.MOVE_NORTH;
+			}
+			else if(currentNode.direction == 'E' && !inEnvironment.isAgentEast(inEnvironment.OUR_TEAM, immediate))
+			{
+				currentNode = currentNode.parent;
+				return AgentAction.MOVE_WEST;
+			}
+			else if(currentNode.direction == 'W' && !inEnvironment.isAgentWest(inEnvironment.OUR_TEAM, immediate))
+			{
+				currentNode = currentNode.parent;
+				return AgentAction.MOVE_EAST;
+			}		
+			else
+				return AgentAction.DO_NOTHING;
+	}
+
+	public int advance(AgentEnvironment inEnvironment, ArrayList <Node> children)
+	{
+		Node nextNode = selectNode(inEnvironment, children);
+
+		//SELECT GOOD LOCATION, BASED ON NOT BLOCKED BY AGENT and HEURISTIC.
+		if(nextNode != null)
+		{
+			currentNode = nextNode;
+			if(currentNode.direction == 'N')
+			{
+				return AgentAction.MOVE_NORTH;
+			}
+			if(currentNode.direction == 'S')
+			{
+				return AgentAction.MOVE_SOUTH;
+			}
+			if(currentNode.direction == 'E')
+			{
+				return AgentAction.MOVE_EAST;
+			}
+			else
+				return AgentAction.MOVE_WEST;
+		}
+
+		else 
+			return AgentAction.DO_NOTHING;
+		
+	}
+	//RETURNS CHILDREN TO BE APPENDED TO TREE
+	public ArrayList<Node> expandCurrentNode (AgentEnvironment inEnvironment)
+	{
+		currentNode.expanded = true;
+
+		boolean obstNorth = inEnvironment.isObstacleNorthImmediate();
+		boolean obstSouth = inEnvironment.isObstacleSouthImmediate();
+		boolean obstEast = inEnvironment.isObstacleEastImmediate();
+		boolean obstWest = inEnvironment.isObstacleWestImmediate();
+
+		ArrayList<Node> children = new ArrayList<Node>();
+		if(currentNode.direction!='S' && !obstNorth)
+		{
+			children.add(new Node(currentNode.locationX,
+				currentNode.locationY + 1, currentNode, 'N'));
+		}
+
+		if(currentNode.direction!='N' && !obstSouth)
+		{
+			children.add(new Node(currentNode.locationX,
+				currentNode.locationY - 1, currentNode, 'S'));
+		}
+		if(currentNode.direction!='W' && !obstEast)
+		{
+			children.add(new Node(currentNode.locationX + 1,
+				currentNode.locationY, currentNode, 'E'));
+		}
+		if(currentNode.direction!='E' && !obstWest)
+		{
+			children.add(new Node(currentNode.locationX - 1,
+				currentNode.locationY, currentNode, 'W'));
+		}
+		return children;
 	}
 
 	public Node selectNode(AgentEnvironment inEnvironment, ArrayList<Node> children)
 	{
-		boolean northBlocked = obstNorth || isAgentNorth(inEnvironment.OUR_TEAM,immediate);
-		boolean southBlocked = obstSouth || isAgentSouth(inEnvironment.OUR_TEAM,immediate);
-		boolean eastBlocked = obstEast || isAgentEast(inEnvironment.OUR_TEAM,immediate);
-		boolean westBlocked = obstWest || isAgentWest(inEnvironment.OUR_TEAM,immediate);
-		ArrayList<Node> selectedNodes = new ArrayList<Nodes>();
+
+
+		boolean northBlocked = inEnvironment.isAgentNorth(inEnvironment.OUR_TEAM,immediate);
+		boolean southBlocked = inEnvironment.isAgentSouth(inEnvironment.OUR_TEAM,immediate);
+		boolean eastBlocked = inEnvironment.isAgentEast(inEnvironment.OUR_TEAM,immediate);
+		boolean westBlocked = inEnvironment.isAgentWest(inEnvironment.OUR_TEAM,immediate);
+
+		boolean [] goalFlags = getGoalFlags(inEnvironment);
+		boolean goalNorth = goalFlags[0];
+		boolean goalSouth = goalFlags[1];
+		boolean goalEast = goalFlags[2];
+		boolean goalWest = goalFlags[3];
+		ArrayList<Node> freeChildren = new ArrayList<Node>();
+		ArrayList<Node> selectedNodes = new ArrayList<Node>();
+
 		//prune blocked moves
-		for(int i; i < children.size(); i++ )
+		for(int i = 0; i < children.size(); i++ )
 		{
-			if(children[i].direction == 'N' && northBlocked)
+			if(children.get(i).direction == 'N' && !northBlocked)
 			{
-				children.remove(i);
-				i--;
+				freeChildren.add(children.get(i));
 			} 
-			else if (children[i].direction == 'S' && southBlocked) 
+			else if (children.get(i).direction == 'S' && !southBlocked) 
 			{
-				children.remove(i);
-				i--;
+				freeChildren.add(children.get(i));
 			}
-			else if (children[i].direction == 'E' && eastBlocked)
+			else if (children.get(i).direction == 'E' && !eastBlocked)
 			{
-				children.remove(i);
-				i--;
+				freeChildren.add(children.get(i));
 			}
-			else if (children[i].direction == 'W' && westBlocked)
+			else if (children.get(i).direction == 'W' && !westBlocked)
 			{
-				children.remove(i);
-				i--;
+				freeChildren.add(children.get(i));
 			}
 		}	
 
+		//IF NO CHILDREN REMAIN AFTER PRUNING, WE WAIT FOR AGENT TO PASS
+		if(freeChildren.size() == 0)
+		{
+			return null;
+		}
+
 		//heuristic
-		for(Node child : children)
+		for(Node child : freeChildren)
 		{
 			if(child.direction == 'N' && goalNorth)
 				selectedNodes.add(child);
@@ -303,7 +300,7 @@ public class bmh140130Agent extends Agent {
 		//final choice
 		int randomIndex = (int)(Math.random()*selectedNodes.size());
 		if(selectedNodes.size() == 0)
-			return children.get(randomIndex);
+			return freeChildren.get(randomIndex);
 		else if(selectedNodes.size() == 1)
 			return selectedNodes.get(0);
 		else
@@ -312,18 +309,20 @@ public class bmh140130Agent extends Agent {
 
 	class Node
 	{
-		int [] location;
+		int locationX = 0;
+		int locationY = 0;
 		Node parent;
-		char direction;
-		boolean startedAtNorth;
-		ArrayList<Node> children;
-		boolean expanded;
+		char direction = 'X';
+		ArrayList<Node> children = new ArrayList<Node>();
+		boolean expanded = false;
 
-		public Node(int [] l, Node p, char d)
+		public Node(int x, int y, Node p, char d)
 		{
-			location = l;
+			locationX = x;
+			locationY = y;
 			parent = p;
 			direction = d;
 		} 
 	}
+
 }
