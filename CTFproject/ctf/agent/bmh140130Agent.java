@@ -66,6 +66,7 @@ public class bmh140130Agent extends Agent {
 						&& currentNode.children.get(i).locationX == badNode.locationX)
 					{
 						currentNode.children.remove(i);
+						i--;
 					}
 			}
 		}
@@ -102,6 +103,26 @@ public class bmh140130Agent extends Agent {
 				goalFlags[3] = inEnvironment.isFlagWest( 
 					inEnvironment.ENEMY_TEAM, ranged );
 				}
+
+			//WE CAPTURE ENEMY DUDE IF HE HAS FLAG AND WE DO TOO.
+			else if(!inEnvironment.hasFlag()
+				&& inEnvironment.hasFlag(inEnvironment.OUR_TEAM) 
+				&& inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM))
+			{
+				goalFlags[0] = inEnvironment.isFlagNorth( 
+					inEnvironment.OUR_TEAM, ranged );
+			
+				goalFlags[1] = inEnvironment.isFlagSouth( 
+					inEnvironment.OUR_TEAM, ranged );
+			
+				goalFlags[2] = inEnvironment.isFlagEast( 
+					inEnvironment.OUR_TEAM, ranged );
+			
+				goalFlags[3] = inEnvironment.isFlagWest( 
+					inEnvironment.OUR_TEAM, ranged );
+			}
+
+
 			else {
 				// we have enemy flag.
 				// make goal our base
@@ -150,25 +171,25 @@ public class bmh140130Agent extends Agent {
 
 	public int backtrack(AgentEnvironment inEnvironment)
 	{
-
+		System.out.println("BACKTRACK");
 			//backtrack
 			badNodes.add(currentNode);
-			if(currentNode.direction == 'N' && !inEnvironment.isAgentNorth(inEnvironment.OUR_TEAM, immediate))
+			if(currentNode.direction == 'N' && !inEnvironment.isAgentSouth(inEnvironment.OUR_TEAM, immediate))
 			{
 				currentNode = currentNode.parent;
 				return AgentAction.MOVE_SOUTH;
 			}
-			else if(currentNode.direction == 'S' && !inEnvironment.isAgentSouth(inEnvironment.OUR_TEAM, immediate))
+			else if(currentNode.direction == 'S' && !inEnvironment.isAgentNorth(inEnvironment.OUR_TEAM, immediate))
 			{
 				currentNode = currentNode.parent;
 				return AgentAction.MOVE_NORTH;
 			}
-			else if(currentNode.direction == 'E' && !inEnvironment.isAgentEast(inEnvironment.OUR_TEAM, immediate))
+			else if(currentNode.direction == 'E' && !inEnvironment.isAgentWest(inEnvironment.OUR_TEAM, immediate))
 			{
 				currentNode = currentNode.parent;
 				return AgentAction.MOVE_WEST;
 			}
-			else if(currentNode.direction == 'W' && !inEnvironment.isAgentWest(inEnvironment.OUR_TEAM, immediate))
+			else if(currentNode.direction == 'W' && !inEnvironment.isAgentEast(inEnvironment.OUR_TEAM, immediate))
 			{
 				currentNode = currentNode.parent;
 				return AgentAction.MOVE_EAST;
@@ -248,6 +269,14 @@ public class bmh140130Agent extends Agent {
 		boolean southBlocked = inEnvironment.isAgentSouth(inEnvironment.OUR_TEAM,immediate);
 		boolean eastBlocked = inEnvironment.isAgentEast(inEnvironment.OUR_TEAM,immediate);
 		boolean westBlocked = inEnvironment.isAgentWest(inEnvironment.OUR_TEAM,immediate);
+
+		if(inEnvironment.hasFlag())
+		{
+			northBlocked = northBlocked || inEnvironment.isAgentNorth(inEnvironment.ENEMY_TEAM,immediate);
+			southBlocked = southBlocked || inEnvironment.isAgentSouth(inEnvironment.ENEMY_TEAM,immediate);
+			eastBlocked = eastBlocked  || inEnvironment.isAgentEast(inEnvironment.ENEMY_TEAM,immediate);
+			westBlocked = westBlocked || inEnvironment.isAgentWest(inEnvironment.ENEMY_TEAM,immediate);
+		}
 
 		boolean [] goalFlags = getGoalFlags(inEnvironment);
 		boolean goalNorth = goalFlags[0];
