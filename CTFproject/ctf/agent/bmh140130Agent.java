@@ -70,6 +70,10 @@ public class bmh140130Agent extends Agent {
 			currentNode = firstNode;
 		}
 
+		/*
+		//--------------------------------------------------
+		I hope to entirely phase out this code.
+
 		// if the goal is north only, and we're not blocked
 			if( goalNorth && ! goalEast && ! goalWest && !obstNorth ) {
 				// move north
@@ -162,7 +166,7 @@ public class bmh140130Agent extends Agent {
 				// completely blocked!
 				return AgentAction.DO_NOTHING;			
 		}
-
+	*/
 		ArrayList<Node> children;
 
 		if(!currentNode.expanded)
