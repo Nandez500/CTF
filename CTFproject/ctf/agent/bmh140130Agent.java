@@ -21,8 +21,8 @@ public class bmh140130Agent extends Agent {
 
 	// implements Agent.getMove() interface
 	public int getMove( AgentEnvironment inEnvironment )
-	{
-		
+	{	
+
 		// booleans describing direction of goal
 		// goal is either enemy flag, or our base
 		boolean [] goalFlags = getGoalFlags(inEnvironment);
@@ -38,14 +38,37 @@ public class bmh140130Agent extends Agent {
 		boolean obstSouth = inEnvironment.isObstacleSouthImmediate();
 		boolean obstEast = inEnvironment.isObstacleEastImmediate();
 		boolean obstWest = inEnvironment.isObstacleWestImmediate();
-		
-		
-
- 
-			//EDITEDITEDITEDIT
-			//Set it up to avoid teammates.
+		boolean inBaseColumn = !inEnvironment.isBaseEast(inEnvironment.OUR_TEAM,ranged) 	
+			&& !inEnvironment.isBaseWest(inEnvironment.OUR_TEAM,ranged)
+			&& (inEnvironment.isBaseNorth(inEnvironment.OUR_TEAM,ranged)
+			|| inEnvironment.isBaseSouth(inEnvironment.OUR_TEAM,ranged));
 
 
+		//set up first state (if we are pointing to first node)
+		if(currentNode == firstNode))
+		{
+			if(obstNorth)
+			{
+				currentNode.startedAtNorth = true;
+			}
+
+			else if(obstSouth)
+			{
+				currentNode.startedAtNorth = false;
+			}
+		}
+
+		boolean topCorner = obstNorth && inHomeColumn;
+		boolean bottomCorner = obstSouth && inHomeColumn;
+		//currentNode to firstNode if we're in the initial state. i.e. obstacle below/above and same column as base.
+		if(topHomeCorner && currentNode.startedAtNorth)
+		{
+			currentNode = firstNode;
+		}
+		else if(bottomHomeCorner && !currentNode.startedAtNorth)
+		{
+			currentNode = firstNode;
+		}
 
 		// if the goal is north only, and we're not blocked
 			if( goalNorth && ! goalEast && ! goalWest && !obstNorth ) {
@@ -140,17 +163,27 @@ public class bmh140130Agent extends Agent {
 				return AgentAction.DO_NOTHING;			
 		}
 
-		//add candidate nodes to the tree, based on if there is obstacle and if location not on bad locations 
-		ArrayList<Node> children = new ArrayList<Node>();
+		ArrayList<Node> children;
+
+		if(!currentNode.expanded)
+		{
+			//add candidate nodes to the tree, based on if there is obstacle and if location not on bad locations 
+			children = expandNode(currentNode);
+		}
+
+		else
+		{
+			//prune out bad nodes from children
+			children = currentNode.children;
+		}
+
+		//Backtrack if nothing to add, mark as bad path if no flag is here
+
+		//if can't backtrack, do nothing.
 
 
-		// if nothing to add, and we didn't get the flag in this path, avoid (we don't have flag yet) and add to bad paths
-		//Backtrack
-
-
-
-		//set currentnode to selected node
-		currentNode = selectNode(inEnvironment);
+		//select from good candidate locations, and if not blocked by agent
+		currentNode = selectNode(inEnvironment, children);
 
 		//move agent
 		if(currentNode.direction == 'N')
@@ -210,6 +243,12 @@ public class bmh140130Agent extends Agent {
 					inEnvironment.OUR_TEAM, ranged );
 				}
 		return goalFlags;
+	}
+
+	public ArrayList<Node> expandNode(AgentEnvironment inEnvironment, Node currentNode)
+	{
+		//
+
 	}
 
 	public Node selectNode(AgentEnvironment inEnvironment, ArrayList<Node> children)
@@ -272,6 +311,7 @@ public class bmh140130Agent extends Agent {
 		int [] location;
 		Node parent;
 		char direction;
+		boolean startedAtNorth;
 		ArrayList<Node> children;
 		boolean expanded;
 
