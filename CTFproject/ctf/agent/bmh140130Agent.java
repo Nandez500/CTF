@@ -4,48 +4,50 @@ package ctf.agent;
 //Node(coordinate,badboolean,1 parent,3 children)
 //queue = path to where you died
 //list = of nodes we determine to be bad 
-
+import java.util.ArrayList;
+import java.util.Stack;
+import java.util.Queue;
 import ctf.common.*;
 
 public class bmh140130Agent extends Agent {
-	
 	static boolean immediate = true;
 	static boolean ranged = false;
+	private ArrayList<Node> badNodes;
+	Node firstNode = Node({0,0},NULL,'X');
+	Node currentNode = firstNode;
+	private Stack <Node> lStack = new Stack <Node> (initialNode);
+
+
 
 	// implements Agent.getMove() interface
 	public int getMove( AgentEnvironment inEnvironment )
 	{
-			// booleans describing direction of goal
-			// goal is either enemy flag, or our base
-			boolean [] goalFlags = getGoalFlags(inEnvironment);
-			boolean goalNorth = goalFlags[0];
-			boolean goalSouth = goalFlags[1];
-			boolean goalEast = goalFlags[2];
-			boolean goalWest = goalFlags[3];
+		
+		// booleans describing direction of goal
+		// goal is either enemy flag, or our base
+		boolean [] goalFlags = getGoalFlags(inEnvironment);
+		boolean goalNorth = goalFlags[0];
+		boolean goalSouth = goalFlags[1];
+		boolean goalEast = goalFlags[2];
+		boolean goalWest = goalFlags[3];
+	
+		// now we have direction booleans for our goal	
+			
+		// check for immediate obstacles blocking our path		
+		boolean obstNorth = inEnvironment.isObstacleNorthImmediate();
+		boolean obstSouth = inEnvironment.isObstacleSouthImmediate();
+		boolean obstEast = inEnvironment.isObstacleEastImmediate();
+		boolean obstWest = inEnvironment.isObstacleWestImmediate();
+		
+		
 
-			
-			
-			
-			// now we have direction booleans for our goal	
-			
-			// check for immediate obstacles blocking our path		
-			boolean obstNorth = inEnvironment.isObstacleNorthImmediate()
-				|| inEnvironment.isAgentNorth(inEnvironment.OUR_TEAM, immediate);	
-			boolean obstSouth = inEnvironment.isObstacleSouth
-			Immediate()
-				|| inEnvironment.isAgentSouth(inEnvironment.OUR_TEAM, immediate);
-			boolean obstEast = inEnvironment.isObstacleEastImmediate()
-				|| inEnvironment.isAgentEast(inEnvironment.OUR_TEAM, immediate);
-			boolean obstWest = inEnvironment.isObstacleWestImmediate()
-				|| inEnvironment.isAgentWest(inEnvironment.OUR_TEAM, immediate);
-				
  
 			//EDITEDITEDITEDIT
 			//Set it up to avoid teammates.
 
 
 
-			// if the goal is north only, and we're not blocked
+		// if the goal is north only, and we're not blocked
 			if( goalNorth && ! goalEast && ! goalWest && !obstNorth ) {
 				// move north
 				return AgentAction.MOVE_NORTH;
@@ -135,10 +137,45 @@ public class bmh140130Agent extends Agent {
 				}	
 			else {
 				// completely blocked!
-				return AgentAction.DO_NOTHING;
-				}	
+				return AgentAction.DO_NOTHING;			
+		}
+
+		//add candidate nodes to the tree, based on if there is obstacle
+
+
+		// if nothing to add, and we didn't get the flag in this path, avoid (we don't have flag yet)
+
+
+
+
+		//set currentnode to selected node
+		currentNode = selectNode(inEnvironment);
+
+		//move agent
+		if(currentNode.direction == 'N')
+		{
+			return AgentAction.MOVE_NORTH;
+		}
+		if(currentNode.direction == 'S')
+		{
+			return AgentAction.MOVE_SOUTH;
+		}
+		if(currentNode.direction == 'E')
+		{
+			return AgentAction.MOVE_EAST;
+		}
+		if(currentNode.direction == 'W')
+		{
+			return AgentAction.MOVE_WEST;
+		}
 	}
 
+
+	public int getMoveBeforeFlag(AgentEnvironment inEnvironment)
+	{
+
+	}
+	
 	public boolean[] getGoalFlags (AgentEnvironment inEnvironment)
 	{
 		boolean [] goalFlags = {false,false,false,false};
@@ -172,5 +209,70 @@ public class bmh140130Agent extends Agent {
 					inEnvironment.OUR_TEAM, ranged );
 				}
 		return goalFlags;
+	}
+
+	public Node selectNode(AgentEnvironment inEnvironment, ArrayList<Node> children)
+	{
+		boolean northBlocked = obstNorth || isAgentNorth(inEnvironment.OUR_TEAM,immediate);
+		boolean southBlocked = obstSouth || isAgentSouth(inEnvironment.OUR_TEAM,immediate);
+		boolean eastBlocked = obstEast || isAgentEast(inEnvironment.OUR_TEAM,immediate);
+		boolean westBlocked = obstWest || isAgentWest(inEnvironment.OUR_TEAM,immediate);
+		ArrayList<Node> selectedNodes = new ArrayList<Nodes>();
+		//prune blocked moves
+		for(int i; i < children.size(); i++ )
+		{
+			if(children[i].direction == 'N' && northBlocked)
+			{
+				children.remove(i);
+				i--;
+			} 
+			else if (children[i].direction == 'S' && southBlocked) 
+			{
+				children.remove(i);
+				i--;
+			}
+			else if (children[i].direction == 'E' && eastBlocked)
+			{
+				children.remove(i);
+				i--;
+			}
+			else if (children[i].direction == 'W' && westBlocked)
+			{
+				children.remove(i);
+				i--;
+			}
+		}	
+
+		//heuristic
+		for(Node child : children)
+		{
+			if(child.direction == 'N')
+
+		}
+
+		//final choice
+
+		if(selectedNodes.size() == 0)
+			return children.get(randomIndex);
+		else if(selectedNodes.size() == 1)
+			return selectedNodes.get(0);
+		else
+			return selectedNodes.get(randomIndex);
+	}
+
+	class Node
+	{
+		int [] location;
+		Node parent;
+		char direction;
+		ArrayList<Node> children;
+		boolean expanded;
+
+		public Node(int [] l, Node p, char d)
+		{
+			location = l;
+			parent = p;
+			direction = d;
+		} 
 	}
 }
