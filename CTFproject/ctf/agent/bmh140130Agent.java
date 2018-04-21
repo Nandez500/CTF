@@ -19,8 +19,8 @@ public class bmh140130Agent extends Agent {
 	Node firstNode = new Node(0,0,firstParent,'X');
 	Node currentNode = firstNode;
 	private ArrayList<Node> badNodes = new ArrayList<Node>();
+	private ArrayList<Node> visitedNodes = new ArrayList<Node>();
 	private Stack <Node> lStack = new Stack <Node> ();
-
 
 
 	// implements Agent.getMove() interface
@@ -67,6 +67,7 @@ public class bmh140130Agent extends Agent {
 					{
 						currentNode.children.remove(i);
 						i--;
+						break;
 					}
 			}
 		}
@@ -76,6 +77,7 @@ public class bmh140130Agent extends Agent {
 		//BACKTRACK IF NO CHILDREN, ADD TO LIST OF BAD NODES
 		if(currentNode.children.size() == 0)
 		{
+			badNodes.add(currentNode);
 			return backtrack(inEnvironment);	
 		}
 
@@ -170,10 +172,19 @@ public class bmh140130Agent extends Agent {
 	}
 
 	public int backtrack(AgentEnvironment inEnvironment)
-	{
-		System.out.println("BACKTRACK");
+	{		
+			//IF WE KEEP BACKTRACKING AT THIS LOCATION MIGHT BE BAD.
+			currentNode.parent.repetitions++;	
+
+			//PAST THREE WE SHOULD STOP ADVANCING FROM THE PARENT NODE
+			if(currentNode.parent.repetitions >= 3)
+			{
+				for(Node child: currentNode.parent.children)
+				{
+					badNodes.add(child);
+				}
+			}
 			//backtrack
-			badNodes.add(currentNode);
 			if(currentNode.direction == 'N' && !inEnvironment.isAgentSouth(inEnvironment.OUR_TEAM, immediate))
 			{
 				currentNode = currentNode.parent;
@@ -222,15 +233,16 @@ public class bmh140130Agent extends Agent {
 				return AgentAction.MOVE_WEST;
 		}
 
+		//EVERYTHING BLOCKED
 		else 
-			return AgentAction.DO_NOTHING;
+			return backtrack(inEnvironment);
 		
 	}
 	//RETURNS CHILDREN TO BE APPENDED TO TREE
 	public ArrayList<Node> expandCurrentNode (AgentEnvironment inEnvironment)
 	{
 		currentNode.expanded = true;
-
+		boolean badChild = false;
 		boolean obstNorth = inEnvironment.isObstacleNorthImmediate();
 		boolean obstSouth = inEnvironment.isObstacleSouthImmediate();
 		boolean obstEast = inEnvironment.isObstacleEastImmediate();
@@ -239,24 +251,68 @@ public class bmh140130Agent extends Agent {
 		ArrayList<Node> children = new ArrayList<Node>();
 		if(currentNode.direction!='S' && !obstNorth)
 		{
-			children.add(new Node(currentNode.locationX,
-				currentNode.locationY + 1, currentNode, 'N'));
+			for(Node badNode: badNodes)
+			{
+				if(badNode.locationX == currentNode.locationX 
+						&& badNode.locationY == currentNode.locationY + 1)
+				{
+					badChild = true;
+					break;
+				}
+			}
+
+			if(!badChild)
+				children.add(new Node(currentNode.locationX,
+					currentNode.locationY + 1, currentNode, 'N'));
 		}
 
 		if(currentNode.direction!='N' && !obstSouth)
 		{
-			children.add(new Node(currentNode.locationX,
-				currentNode.locationY - 1, currentNode, 'S'));
+			for(Node badNode: badNodes)
+			{
+				if(badNode.locationX == currentNode.locationX 
+						&& badNode.locationY == currentNode.locationY - 1)
+				{
+					badChild = true;
+					break;
+	`			}
+			}
+
+			if(!badChild)
+				children.add(new Node(currentNode.locationX,
+					currentNode.locationY - 1, currentNode, 'S'));
 		}
 		if(currentNode.direction!='W' && !obstEast)
 		{
-			children.add(new Node(currentNode.locationX + 1,
-				currentNode.locationY, currentNode, 'E'));
+			for(Node badNode: badNodes)
+			{
+				if(badNode.locationX == currentNode.locationX + 1
+						&& badNode.locationY == currentNode.locationY)
+				{
+					badChild = true;
+					break;
+				}
+			}
+
+			if(!badChild)
+				children.add(new Node(currentNode.locationX + 1,
+					currentNode.locationY, currentNode, 'E'));
 		}
 		if(currentNode.direction!='E' && !obstWest)
 		{
-			children.add(new Node(currentNode.locationX - 1,
-				currentNode.locationY, currentNode, 'W'));
+			for(Node badNode: badNodes)
+			{
+				if(badNode.locationX == currentNode.locationX - 1
+						&& badNode.locationY == currentNode.locationY)
+				{
+					badChild = true;
+					break;
+				}
+			}
+
+			if(!badChild)
+				children.add(new Node(currentNode.locationX - 1,
+					currentNode.locationY, currentNode, 'W'));
 		}
 		return children;
 	}
@@ -344,6 +400,7 @@ public class bmh140130Agent extends Agent {
 		char direction = 'X';
 		ArrayList<Node> children = new ArrayList<Node>();
 		boolean expanded = false;
+		int repetitions = 0;
 
 		public Node(int x, int y, Node p, char d)
 		{
