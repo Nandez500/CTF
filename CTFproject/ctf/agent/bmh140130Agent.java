@@ -89,7 +89,8 @@ public class bmh140130Agent extends Agent {
 	public boolean[] getGoalFlags (AgentEnvironment inEnvironment)
 	{
 		boolean [] goalFlags = {false,false,false,false};
-		if( !inEnvironment.hasFlag() ) {
+		if( !inEnvironment.hasFlag() 
+				&& !inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM)) {
 				// make goal the enemy flag
 				goalFlags[0] = inEnvironment.isFlagNorth( 
 					inEnvironment.ENEMY_TEAM, ranged );
@@ -104,9 +105,8 @@ public class bmh140130Agent extends Agent {
 					inEnvironment.ENEMY_TEAM, ranged );
 				}
 
-			//WE CAPTURE ENEMY DUDE IF HE HAS FLAG AND WE DO TOO.
+			//WE CAPTURE ENEMY DUDE IF HE HAS FLAG.
 			else if(!inEnvironment.hasFlag()
-				&& inEnvironment.hasFlag(inEnvironment.OUR_TEAM) 
 				&& inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM))
 			{
 				goalFlags[0] = inEnvironment.isFlagNorth( 
@@ -121,7 +121,6 @@ public class bmh140130Agent extends Agent {
 				goalFlags[3] = inEnvironment.isFlagWest( 
 					inEnvironment.OUR_TEAM, ranged );
 			}
-
 
 			else {
 				// we have enemy flag.
