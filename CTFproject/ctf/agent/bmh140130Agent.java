@@ -19,8 +19,9 @@ public class bmh140130Agent extends Agent {
 	Node firstNode = new Node(0,0,firstParent,'X');
 	Node currentNode = firstNode;
 	private ArrayList<Node> badNodes = new ArrayList<Node>();
-	private ArrayList<Node> visitedNodes = new ArrayList<Node>();
+	private ArrayList<Node> uniqueNodes = new ArrayList<Node>();
 	private Stack <Node> lStack = new Stack <Node> ();
+
 
 
 	// implements Agent.getMove() interface
@@ -80,9 +81,6 @@ public class bmh140130Agent extends Agent {
 			badNodes.add(currentNode);
 			return backtrack(inEnvironment);	
 		}
-
-		System.out.println(currentNode.locationX +"," + currentNode.locationY);
-		System.out.println(currentNode.direction);
 		return advance(inEnvironment, currentNode.children);
 
 	}
@@ -150,6 +148,7 @@ public class bmh140130Agent extends Agent {
 		boolean obstNorth = inEnvironment.isObstacleNorthImmediate();
 		boolean obstSouth = inEnvironment.isObstacleSouthImmediate();
 
+
 		//ARE WE IN HOME COLUMN
 		boolean inHomeColumn = !inEnvironment.isBaseEast(inEnvironment.OUR_TEAM,ranged) 	
 			&& !inEnvironment.isBaseWest(inEnvironment.OUR_TEAM,ranged)
@@ -163,10 +162,12 @@ public class bmh140130Agent extends Agent {
 		if(topHomeCorner && startedAtNorth)
 		{
 			currentNode = firstNode;
+			uniqueNodes = new ArrayList<Node>();
 		}
 		else if(bottomHomeCorner && !startedAtNorth)
 		{
 			currentNode = firstNode;
+			uniqueNodes = new ArrayList<Node>();
 		}
 
 	}
@@ -174,16 +175,14 @@ public class bmh140130Agent extends Agent {
 	public int backtrack(AgentEnvironment inEnvironment)
 	{		
 			//IF WE KEEP BACKTRACKING AT THIS LOCATION MIGHT BE BAD.
-			currentNode.parent.repetitions++;	
+			currentNode.repetitions++;	
 
-			//PAST THREE WE SHOULD STOP ADVANCING FROM THE PARENT NODE
-			if(currentNode.parent.repetitions >= 3)
+			//PAST THREE WE SHOULD STOP ADVANCING HERE FROM THE PARENT NODE
+			if(currentNode.repetitions >= 3)
 			{
-				for(Node child: currentNode.parent.children)
-				{
-					badNodes.add(child);
-				}
+				badNodes.add(currentNode);
 			}
+
 			//backtrack
 			if(currentNode.direction == 'N' && !inEnvironment.isAgentSouth(inEnvironment.OUR_TEAM, immediate))
 			{
@@ -208,6 +207,7 @@ public class bmh140130Agent extends Agent {
 			else
 				return AgentAction.DO_NOTHING;
 	}
+
 
 	public int advance(AgentEnvironment inEnvironment, ArrayList <Node> children)
 	{
@@ -238,11 +238,14 @@ public class bmh140130Agent extends Agent {
 			return backtrack(inEnvironment);
 		
 	}
+	
+
+//-------------------------------------------------------------------
 	//RETURNS CHILDREN TO BE APPENDED TO TREE
 	public ArrayList<Node> expandCurrentNode (AgentEnvironment inEnvironment)
 	{
 		currentNode.expanded = true;
-		boolean badChild = false;
+		Node newNode;
 		boolean obstNorth = inEnvironment.isObstacleNorthImmediate();
 		boolean obstSouth = inEnvironment.isObstacleSouthImmediate();
 		boolean obstEast = inEnvironment.isObstacleEastImmediate();
@@ -251,6 +254,8 @@ public class bmh140130Agent extends Agent {
 		ArrayList<Node> children = new ArrayList<Node>();
 		if(currentNode.direction!='S' && !obstNorth)
 		{
+			boolean badChild = false;
+			int dupeCount = 0;
 			for(Node badNode: badNodes)
 			{
 				if(badNode.locationX == currentNode.locationX 
@@ -261,13 +266,29 @@ public class bmh140130Agent extends Agent {
 				}
 			}
 
-			if(!badChild)
-				children.add(new Node(currentNode.locationX,
-					currentNode.locationY + 1, currentNode, 'N'));
+
+			for(Node uniqueNode : uniqueNodes)
+			{
+				if(uniqueNode.locationX == currentNode.locationX 
+						&& uniqueNode.locationY == currentNode.locationY + 1
+						&& uniqueNode.direction == 'N')
+				{
+					dupeCount++;
+				}
+			}
+			if(!badChild && dupeCount <= 3)
+			{
+				newNode = new Node(currentNode.locationX,
+					currentNode.locationY + 1, currentNode, 'N');
+				uniqueNodes.add(newNode);
+				children.add(newNode);
+			}
 		}
 
 		if(currentNode.direction!='N' && !obstSouth)
 		{
+			boolean badChild = false;
+			int dupeCount = 0;
 			for(Node badNode: badNodes)
 			{
 				if(badNode.locationX == currentNode.locationX 
@@ -275,15 +296,34 @@ public class bmh140130Agent extends Agent {
 				{
 					badChild = true;
 					break;
-	`			}
+				}
 			}
 
-			if(!badChild)
-				children.add(new Node(currentNode.locationX,
-					currentNode.locationY - 1, currentNode, 'S'));
+			for(Node uniqueNode : uniqueNodes)
+			{
+				if(uniqueNode.locationX == currentNode.locationX 
+						&& uniqueNode.locationY == currentNode.locationY - 1
+						&& uniqueNode.direction == 'S')
+				{
+					dupeCount++;
+				}
+			}
+
+			if(!badChild && dupeCount <= 3)
+			{
+				newNode = new Node(currentNode.locationX,
+					currentNode.locationY - 1, currentNode, 'S');
+				uniqueNodes.add(newNode);
+				children.add(newNode);
+			}
+
 		}
+
+		//EAST
 		if(currentNode.direction!='W' && !obstEast)
 		{
+			boolean badChild = false;
+			int dupeCount = 0;
 			for(Node badNode: badNodes)
 			{
 				if(badNode.locationX == currentNode.locationX + 1
@@ -293,13 +333,31 @@ public class bmh140130Agent extends Agent {
 					break;
 				}
 			}
+			for(Node uniqueNode : uniqueNodes)
+			{
+				if(uniqueNode.locationX == currentNode.locationX + 1
+						&& uniqueNode.locationY == currentNode.locationY
+						&& uniqueNode.direction == 'E')
+				{
+					dupeCount++;
+				}
+			}
 
-			if(!badChild)
-				children.add(new Node(currentNode.locationX + 1,
-					currentNode.locationY, currentNode, 'E'));
+			if(!badChild && dupeCount <= 3)
+			{
+				System.out.println(uniqueNodes.size());	
+				newNode = new Node(currentNode.locationX + 1,
+					currentNode.locationY, currentNode, 'E');
+				uniqueNodes.add(newNode);
+				children.add(newNode);
+			}
 		}
+
+		//WEST
 		if(currentNode.direction!='E' && !obstWest)
 		{
+			boolean badChild = false;
+			int dupeCount = 0;
 			for(Node badNode: badNodes)
 			{
 				if(badNode.locationX == currentNode.locationX - 1
@@ -309,11 +367,24 @@ public class bmh140130Agent extends Agent {
 					break;
 				}
 			}
+			for(Node uniqueNode : uniqueNodes)
+			{
+				if(uniqueNode.locationX == currentNode.locationX - 1
+						&& uniqueNode.locationY == currentNode.locationY
+						&& uniqueNode.direction == 'W')
+				{
+					dupeCount++;				}
+			}
 
-			if(!badChild)
-				children.add(new Node(currentNode.locationX - 1,
-					currentNode.locationY, currentNode, 'W'));
+			if(!badChild && dupeCount <= 3)
+			{
+				newNode = new Node(currentNode.locationX - 1,
+					currentNode.locationY, currentNode, 'W');
+				uniqueNodes.add(newNode);
+				children.add(newNode);
+			}
 		}
+
 		return children;
 	}
 
