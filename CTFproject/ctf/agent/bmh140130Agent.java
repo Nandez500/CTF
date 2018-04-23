@@ -90,24 +90,19 @@ public class bmh140130Agent extends Agent {
 	}
 
 
-	public boolean bothHaveFlagButOursIsCloser(AgentEnvironment inEnvironment)
+
+
+	public boolean oursIsCloser(AgentEnvironment inEnvironment)
 	{
-		if (inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM)
-			&& inEnvironment.hasFlag())
+		if(inEnvironment.isBaseWest(inEnvironment.OUR_TEAM, ranged) 
+			&& Math.abs(currentNode.locationX) < mapLength/2)
 		{
-			if(inEnvironment.isBaseWest(inEnvironment.OUR_TEAM, ranged) 
-				&& Math.abs(currentNode.locationX) < mapLength/2)
-			{
-				return true;
-			}
-
-			if(inEnvironment.isBaseEast(inEnvironment.OUR_TEAM, ranged) 
-				&& Math.abs(currentNode.locationX) < mapLength/2)
-			{
-				return true;	
-			}
-
-			return false;
+			return true;
+		}
+		if(inEnvironment.isBaseEast(inEnvironment.OUR_TEAM, ranged) 
+			&& Math.abs(currentNode.locationX) < mapLength/2)
+		{
+			return true;	
 		}
 
 		return false;
@@ -117,9 +112,9 @@ public class bmh140130Agent extends Agent {
 	public boolean[] getGoalFlags (AgentEnvironment inEnvironment)
 	{
 		boolean [] goalFlags = {false,false,false,false};
-		if( !inEnvironment.hasFlag() 
+		if( !inEnvironment.hasFlag(inEnvironment.OUR_TEAM) 
 				&& !inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM)) {
-				// make goal the enemy flag
+				// make goal the enemy flag IF WE DONT AND THEY DONT
 				goalFlags[0] = inEnvironment.isFlagNorth( 
 					inEnvironment.ENEMY_TEAM, ranged );
 			
@@ -133,8 +128,46 @@ public class bmh140130Agent extends Agent {
 					inEnvironment.ENEMY_TEAM, ranged );
 				}
 
-			//WE CAPTURE ENEMY DUDE IF HE HAS FLAG.
+
+			//GO FOR THEIRS IF IM ON THEIR SIDE AND THEY HAVE FLAG AND WE DONT	
+			else if(!inEnvironment.hasFlag(inEnvironment.OUR_TEAM)
+				&& inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM)
+				&& !oursIsCloser(inEnvironment))
+			{
+				goalFlags[0] = inEnvironment.isFlagNorth( 
+					inEnvironment.ENEMY_TEAM, ranged );
+			
+				goalFlags[1] = inEnvironment.isFlagSouth( 
+					inEnvironment.ENEMY_TEAM, ranged );
+			
+				goalFlags[2] = inEnvironment.isFlagEast( 
+					inEnvironment.ENEMY_TEAM, ranged );
+			
+				goalFlags[3] = inEnvironment.isFlagWest( 
+					inEnvironment.ENEMY_TEAM, ranged );
+			}	
+
+			//I GO AFTER OUR FLAG FROM ENEMY IF IM ON OUR SIDE AND THEY HAVE FLAG AND WE DONT
+			else if(!inEnvironment.hasFlag(inEnvironment.OUR_TEAM)
+				&& inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM)
+				&& oursIsCloser(inEnvironment))	
+			{
+				goalFlags[0] = inEnvironment.isFlagNorth( 
+					inEnvironment.OUR_TEAM, ranged );
+			
+				goalFlags[1] = inEnvironment.isFlagSouth( 
+					inEnvironment.OUR_TEAM, ranged );
+			
+				goalFlags[2] = inEnvironment.isFlagEast( 
+					inEnvironment.OUR_TEAM, ranged );
+			
+				goalFlags[3] = inEnvironment.isFlagWest( 
+					inEnvironment.ENEMY_TEAM, ranged );
+			}
+
+			//I CAPTURE ENEMY DUDE IF HE HAS FLAG AND I DONT BUT WE DO
 			else if(!inEnvironment.hasFlag()
+				&& inEnvironment.hasFlag(inEnvironment.OUR_TEAM)
 				&& inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM) )
 			{
 				goalFlags[0] = inEnvironment.isFlagNorth( 
@@ -149,9 +182,13 @@ public class bmh140130Agent extends Agent {
 				goalFlags[3] = inEnvironment.isFlagWest( 
 					inEnvironment.OUR_TEAM, ranged );
 			}
+
 			
-			//we have flag and they have flag but not closer to ours
-			else if(!bothHaveFlagButOursIsCloser(inEnvironment))
+
+			//I CAPTURE ENEMY IF HE HAS FLAG AND I DO BUT IM ON THEIR SIDE
+			else if(inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM)
+				&& inEnvironment.hasFlag()
+				&& !oursIsCloser(inEnvironment))
 			{/////
 				goalFlags[0] = inEnvironment.isFlagNorth( 
 					inEnvironment.OUR_TEAM, ranged );
@@ -166,9 +203,11 @@ public class bmh140130Agent extends Agent {
 					inEnvironment.OUR_TEAM, ranged );
 			}
 
+
+
 			else {
-				// we have enemy flag.
-				// make goal our base
+				//I GO HOME IF EITHER ENEMY DOESNT HAVE FLAG
+				//OR THEY HAVE FLAG BUT IM ON OUR SIDE
 				goalFlags[0] = inEnvironment.isBaseNorth( 
 					inEnvironment.OUR_TEAM, ranged );
 			
@@ -456,16 +495,32 @@ public class bmh140130Agent extends Agent {
 		boolean eastBlocked = inEnvironment.isAgentEast(inEnvironment.OUR_TEAM,immediate);
 		boolean westBlocked = inEnvironment.isAgentWest(inEnvironment.OUR_TEAM,immediate);
 
-		if(!inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM) || bothHaveFlagButOursIsCloser(inEnvironment))
+		if(inEnvironment.hasFlag() && oursIsCloser(inEnvironment))
 		{
 			northBlocked = northBlocked 
-				|| (inEnvironment.isAgentNorth(inEnvironment.ENEMY_TEAM,immediate));
+				|| inEnvironment.isAgentNorth(inEnvironment.ENEMY_TEAM,immediate) ;
 			southBlocked = southBlocked 
-				|| (inEnvironment.isAgentSouth(inEnvironment.ENEMY_TEAM,immediate));
+				|| inEnvironment.isAgentSouth(inEnvironment.ENEMY_TEAM,immediate);
 			eastBlocked = eastBlocked  
-				|| (inEnvironment.isAgentEast(inEnvironment.ENEMY_TEAM,immediate));
+				|| inEnvironment.isAgentEast(inEnvironment.ENEMY_TEAM,immediate);
 			westBlocked = westBlocked 
-				|| (inEnvironment.isAgentWest(inEnvironment.ENEMY_TEAM,immediate));
+				|| inEnvironment.isAgentWest(inEnvironment.ENEMY_TEAM,immediate);
+		}
+		
+		else if(inEnvironment.hasFlag() && !oursIsCloser(inEnvironment))
+		{
+			northBlocked = northBlocked 
+				|| (inEnvironment.isAgentNorth(inEnvironment.ENEMY_TEAM,immediate)
+					&& !inEnvironment.isFlagNorth(inEnvironment.OUR_TEAM,immediate));
+			southBlocked = southBlocked 
+				|| (inEnvironment.isAgentSouth(inEnvironment.ENEMY_TEAM,immediate)
+					&& !inEnvironment.isFlagSouth(inEnvironment.OUR_TEAM,immediate));
+			eastBlocked = eastBlocked  
+				|| (inEnvironment.isAgentEast(inEnvironment.ENEMY_TEAM,immediate)
+					&& !inEnvironment.isFlagEast(inEnvironment.OUR_TEAM,immediate));
+			westBlocked = westBlocked 
+				|| (inEnvironment.isAgentWest(inEnvironment.ENEMY_TEAM,immediate)
+					&& !inEnvironment.isFlagWest(inEnvironment.OUR_TEAM,immediate));
 		}
 
 		boolean [] goalFlags = getGoalFlags(inEnvironment);
