@@ -20,6 +20,7 @@ public class bmh140130Agent extends Agent {
 	Node firstNode = new Node(0,0,firstParent,'X');
 	double count = 0;
 	Node currentNode = firstNode;
+	private ArrayList<Node> stuckNodes = new ArrayList<Node>();
 	private ArrayList<Node> badNodes = new ArrayList<Node>();
 	private ArrayList<Node> uniqueNodes = new ArrayList<Node>();
 	private Stack <Node> lStack = new Stack <Node> ();
@@ -66,9 +67,9 @@ public class bmh140130Agent extends Agent {
 		{
 			for(int i = 0 ; i < currentNode.children.size(); i++)
 			{
-				for(Node badNode: badNodes)
-					if(currentNode.children.get(i).locationY == badNode.locationY 
-						&& currentNode.children.get(i).locationX == badNode.locationX)
+				for(Node stuckNode: stuckNodes)
+					if(currentNode.children.get(i).locationY == stuckNode.locationY 
+						&& currentNode.children.get(i).locationX == stuckNode.locationX)
 					{
 						currentNode.children.remove(i);
 						i--;
@@ -82,7 +83,7 @@ public class bmh140130Agent extends Agent {
 		//BACKTRACK IF NO CHILDREN, ADD TO LIST OF BAD NODES
 		if(currentNode.children.size() == 0)
 		{
-			badNodes.add(currentNode);
+			stuckNodes.add(currentNode);
 			return backtrack(inEnvironment);	
 		}
 		return advance(inEnvironment, currentNode.children);
@@ -183,7 +184,23 @@ public class bmh140130Agent extends Agent {
 					inEnvironment.OUR_TEAM, ranged );
 			}
 
+			//I GO FOR THEIRS IF HE DOESNT HAVE FLAG AND I DONT BUT WE DO
+			else if(!inEnvironment.hasFlag()
+				&& inEnvironment.hasFlag(inEnvironment.OUR_TEAM)
+				&& !inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM))	
+			{
+				goalFlags[0] = inEnvironment.isBaseNorth( 
+					inEnvironment.ENEMY_TEAM, ranged );
 			
+				goalFlags[1] = inEnvironment.isBaseSouth( 
+					inEnvironment.ENEMY_TEAM, ranged );
+			
+				goalFlags[2] = inEnvironment.isBaseEast( 
+					inEnvironment.ENEMY_TEAM, ranged );
+			
+				goalFlags[3] = inEnvironment.isBaseWest( 
+					inEnvironment.ENEMY_TEAM, ranged );
+			}		
 
 			//I CAPTURE ENEMY IF HE HAS FLAG AND I DO BUT IM ON THEIR SIDE
 			else if(inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM)
@@ -272,12 +289,13 @@ public class bmh140130Agent extends Agent {
 	public int backtrack(AgentEnvironment inEnvironment)
 	{		
 			//IF WE KEEP BACKTRACKING AT THIS LOCATION MIGHT BE BAD.
-			currentNode.repetitions++;	
+			if(currentNode.parent!= null && currentNode.parent.children.size() == 1)	
+				currentNode.repetitions++;	
 
 			//PAST THREE WE SHOULD STOP ADVANCING HERE FROM THE PARENT NODE
 			if(currentNode.repetitions >= 3)
 			{
-				badNodes.add(currentNode);
+				stuckNodes.add(currentNode);
 			}
 
 			//backtrack
@@ -353,10 +371,10 @@ public class bmh140130Agent extends Agent {
 		{
 			boolean badChild = false;
 			int dupeCount = 0;
-			for(Node badNode: badNodes)
+			for(Node stuckNode: stuckNodes)
 			{
-				if(badNode.locationX == currentNode.locationX 
-						&& badNode.locationY == currentNode.locationY + 1)
+				if(stuckNode.locationX == currentNode.locationX 
+						&& stuckNode.locationY == currentNode.locationY + 1)
 				{
 					badChild = true;
 					break;
@@ -386,10 +404,10 @@ public class bmh140130Agent extends Agent {
 		{
 			boolean badChild = false;
 			int dupeCount = 0;
-			for(Node badNode: badNodes)
+			for(Node stuckNode: stuckNodes)
 			{
-				if(badNode.locationX == currentNode.locationX 
-						&& badNode.locationY == currentNode.locationY - 1)
+				if(stuckNode.locationX == currentNode.locationX 
+						&& stuckNode.locationY == currentNode.locationY - 1)
 				{
 					badChild = true;
 					break;
@@ -421,10 +439,10 @@ public class bmh140130Agent extends Agent {
 		{
 			boolean badChild = false;
 			int dupeCount = 0;
-			for(Node badNode: badNodes)
+			for(Node stuckNode: stuckNodes)
 			{
-				if(badNode.locationX == currentNode.locationX + 1
-						&& badNode.locationY == currentNode.locationY)
+				if(stuckNode.locationX == currentNode.locationX + 1
+						&& stuckNode.locationY == currentNode.locationY)
 				{
 					badChild = true;
 					break;
@@ -454,10 +472,10 @@ public class bmh140130Agent extends Agent {
 		{
 			boolean badChild = false;
 			int dupeCount = 0;
-			for(Node badNode: badNodes)
+			for(Node stuckNode: stuckNodes)
 			{
-				if(badNode.locationX == currentNode.locationX - 1
-						&& badNode.locationY == currentNode.locationY)
+				if(stuckNode.locationX == currentNode.locationX - 1
+						&& stuckNode.locationY == currentNode.locationY)
 				{
 					badChild = true;
 					break;
