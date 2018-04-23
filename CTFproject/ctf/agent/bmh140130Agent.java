@@ -15,8 +15,10 @@ public class bmh140130Agent extends Agent {
 	static boolean immediate = true;
 	static boolean ranged = false;
 	boolean startedAtNorth = false;
+	int mapLength = 1000;
 	Node firstParent = null;
 	Node firstNode = new Node(0,0,firstParent,'X');
+	double count = 0;
 	Node currentNode = firstNode;
 	private ArrayList<Node> badNodes = new ArrayList<Node>();
 	private ArrayList<Node> uniqueNodes = new ArrayList<Node>();
@@ -27,7 +29,8 @@ public class bmh140130Agent extends Agent {
 	// implements Agent.getMove() interface
 	public int getMove( AgentEnvironment inEnvironment )
 	{	
-
+		count += 1;
+		System.out.println(count);
 		// booleans describing direction of goal
 		// goal is either enemy flag, or our base
 
@@ -50,6 +53,7 @@ public class bmh140130Agent extends Agent {
 
 		
 		resetIfAtSpawn(inEnvironment);
+		setMapLengthIfAtEnemyBase(inEnvironment);
 
 		//EXPAND NODE, based on if there is obstacle and if location not on bad locations 
 		if(!currentNode.expanded)
@@ -85,7 +89,31 @@ public class bmh140130Agent extends Agent {
 
 	}
 
-	
+
+	public boolean bothHaveFlagButOursIsCloser(AgentEnvironment inEnvironment)
+	{
+		if (inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM)
+			&& inEnvironment.hasFlag())
+		{
+			if(inEnvironment.isBaseWest(inEnvironment.OUR_TEAM, ranged) 
+				&& Math.abs(currentNode.locationX) < mapLength/2)
+			{
+				return true;
+			}
+
+			if(inEnvironment.isBaseEast(inEnvironment.OUR_TEAM, ranged) 
+				&& Math.abs(currentNode.locationX) < mapLength/2)
+			{
+				return true;	
+			}
+
+			return false;
+		}
+
+		return false;
+
+	}
+
 	public boolean[] getGoalFlags (AgentEnvironment inEnvironment)
 	{
 		boolean [] goalFlags = {false,false,false,false};
@@ -107,8 +135,24 @@ public class bmh140130Agent extends Agent {
 
 			//WE CAPTURE ENEMY DUDE IF HE HAS FLAG.
 			else if(!inEnvironment.hasFlag()
-				&& inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM))
+				&& inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM) )
 			{
+				goalFlags[0] = inEnvironment.isFlagNorth( 
+					inEnvironment.OUR_TEAM, ranged );
+			
+				goalFlags[1] = inEnvironment.isFlagSouth( 
+					inEnvironment.OUR_TEAM, ranged );
+			
+				goalFlags[2] = inEnvironment.isFlagEast( 
+					inEnvironment.OUR_TEAM, ranged );
+			
+				goalFlags[3] = inEnvironment.isFlagWest( 
+					inEnvironment.OUR_TEAM, ranged );
+			}
+			
+			//we have flag and they have flag but not closer to ours
+			else if(!bothHaveFlagButOursIsCloser(inEnvironment))
+			{/////
 				goalFlags[0] = inEnvironment.isFlagNorth( 
 					inEnvironment.OUR_TEAM, ranged );
 			
@@ -167,6 +211,21 @@ public class bmh140130Agent extends Agent {
 		{
 			currentNode = firstNode;
 			uniqueNodes = new ArrayList<Node>();
+		}
+
+	}
+
+	public void setMapLengthIfAtEnemyBase(AgentEnvironment inEnvironment)
+	{
+		if(inEnvironment.isBaseNorth(inEnvironment.ENEMY_TEAM,immediate)
+			|| inEnvironment.isBaseSouth(inEnvironment.ENEMY_TEAM,immediate))
+		{
+			mapLength = Math.abs(currentNode.locationX) + 1;
+		}
+		else if(inEnvironment.isBaseEast(inEnvironment.ENEMY_TEAM,immediate)
+			|| inEnvironment.isBaseWest(inEnvironment.ENEMY_TEAM,immediate))
+		{
+			mapLength = Math.abs(currentNode.locationX) + 2;
 		}
 
 	}
@@ -343,8 +402,7 @@ public class bmh140130Agent extends Agent {
 			}
 
 			if(!badChild && dupeCount <= 3)
-			{
-				System.out.println(uniqueNodes.size());	
+			{	
 				newNode = new Node(currentNode.locationX + 1,
 					currentNode.locationY, currentNode, 'E');
 				uniqueNodes.add(newNode);
@@ -387,6 +445,8 @@ public class bmh140130Agent extends Agent {
 		return children;
 	}
 
+
+
 	public Node selectNode(AgentEnvironment inEnvironment, ArrayList<Node> children)
 	{
 
@@ -396,12 +456,16 @@ public class bmh140130Agent extends Agent {
 		boolean eastBlocked = inEnvironment.isAgentEast(inEnvironment.OUR_TEAM,immediate);
 		boolean westBlocked = inEnvironment.isAgentWest(inEnvironment.OUR_TEAM,immediate);
 
-		if(inEnvironment.hasFlag())
+		if(!inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM) || bothHaveFlagButOursIsCloser(inEnvironment))
 		{
-			northBlocked = northBlocked || inEnvironment.isAgentNorth(inEnvironment.ENEMY_TEAM,immediate);
-			southBlocked = southBlocked || inEnvironment.isAgentSouth(inEnvironment.ENEMY_TEAM,immediate);
-			eastBlocked = eastBlocked  || inEnvironment.isAgentEast(inEnvironment.ENEMY_TEAM,immediate);
-			westBlocked = westBlocked || inEnvironment.isAgentWest(inEnvironment.ENEMY_TEAM,immediate);
+			northBlocked = northBlocked 
+				|| (inEnvironment.isAgentNorth(inEnvironment.ENEMY_TEAM,immediate));
+			southBlocked = southBlocked 
+				|| (inEnvironment.isAgentSouth(inEnvironment.ENEMY_TEAM,immediate));
+			eastBlocked = eastBlocked  
+				|| (inEnvironment.isAgentEast(inEnvironment.ENEMY_TEAM,immediate));
+			westBlocked = westBlocked 
+				|| (inEnvironment.isAgentWest(inEnvironment.ENEMY_TEAM,immediate));
 		}
 
 		boolean [] goalFlags = getGoalFlags(inEnvironment);
