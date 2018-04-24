@@ -162,7 +162,7 @@ public class bmh140130Agent extends Agent {
 					inEnvironment.OUR_TEAM, ranged );
 			
 				goalFlags[3] = inEnvironment.isFlagWest( 
-					inEnvironment.ENEMY_TEAM, ranged );
+					inEnvironment.OUR_TEAM, ranged );
 			}
 
 			//I CAPTURE ENEMY DUDE IF HE HAS FLAG AND I DONT BUT WE DO
