@@ -79,7 +79,6 @@ public class bmh140130Agent extends Agent {
 		}
 
 		
-
 		//BACKTRACK IF NO CHILDREN, ADD TO LIST OF BAD NODES
 		if(currentNode.children.size() == 0)
 		{
@@ -96,12 +95,12 @@ public class bmh140130Agent extends Agent {
 	public boolean oursIsCloser(AgentEnvironment inEnvironment)
 	{
 		if(inEnvironment.isBaseWest(inEnvironment.OUR_TEAM, ranged) 
-			&& Math.abs(currentNode.locationX) < mapLength/2)
+			&& Math.abs(currentNode.locationX) < mapLength/2 - 1)
 		{
 			return true;
 		}
 		if(inEnvironment.isBaseEast(inEnvironment.OUR_TEAM, ranged) 
-			&& Math.abs(currentNode.locationX) < mapLength/2)
+			&& Math.abs(currentNode.locationX) < mapLength/2 - 1)
 		{
 			return true;	
 		}
@@ -189,16 +188,16 @@ public class bmh140130Agent extends Agent {
 				&& inEnvironment.hasFlag(inEnvironment.OUR_TEAM)
 				&& !inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM))	
 			{
-				goalFlags[0] = inEnvironment.isBaseNorth( 
+				goalFlags[0] = inEnvironment.isFlagNorth( 
 					inEnvironment.ENEMY_TEAM, ranged );
 			
-				goalFlags[1] = inEnvironment.isBaseSouth( 
+				goalFlags[1] = inEnvironment.isFlagSouth( 
 					inEnvironment.ENEMY_TEAM, ranged );
 			
-				goalFlags[2] = inEnvironment.isBaseEast( 
+				goalFlags[2] = inEnvironment.isFlagEast( 
 					inEnvironment.ENEMY_TEAM, ranged );
 			
-				goalFlags[3] = inEnvironment.isBaseWest( 
+				goalFlags[3] = inEnvironment.isFlagWest( 
 					inEnvironment.ENEMY_TEAM, ranged );
 			}		
 
@@ -253,7 +252,6 @@ public class bmh140130Agent extends Agent {
 			&& !inEnvironment.isBaseWest(inEnvironment.OUR_TEAM,ranged)
 			&& (inEnvironment.isBaseNorth(inEnvironment.OUR_TEAM,ranged)
 			|| inEnvironment.isBaseSouth(inEnvironment.OUR_TEAM,ranged));
-
 
 		//ARE WE WHERE WE SPAWNED ORIGINALLY. RESET TO FIRSTNODE IF SO.
 		boolean topHomeCorner = obstNorth && inHomeColumn;
@@ -516,7 +514,7 @@ public class bmh140130Agent extends Agent {
 		if(inEnvironment.hasFlag() && oursIsCloser(inEnvironment))
 		{
 			northBlocked = northBlocked 
-				|| inEnvironment.isAgentNorth(inEnvironment.ENEMY_TEAM,immediate) ;
+				|| inEnvironment.isAgentNorth(inEnvironment.ENEMY_TEAM,immediate);
 			southBlocked = southBlocked 
 				|| inEnvironment.isAgentSouth(inEnvironment.ENEMY_TEAM,immediate);
 			eastBlocked = eastBlocked  
@@ -524,8 +522,24 @@ public class bmh140130Agent extends Agent {
 			westBlocked = westBlocked 
 				|| inEnvironment.isAgentWest(inEnvironment.ENEMY_TEAM,immediate);
 		}
-		
-		else if(inEnvironment.hasFlag() && !oursIsCloser(inEnvironment))
+		/*
+		else if((inEnvironment.hasFlag() && !oursIsCloser(inEnvironment))|| inEnvironment.hasFlag(inEnvironment.ENEMY_TEAM))
+		{
+			northBlocked = northBlocked 
+				|| (inEnvironment.isAgentNorth(inEnvironment.ENEMY_TEAM,immediate)
+					&& !inEnvironment.isFlagNorth(inEnvironment.OUR_TEAM,immediate));
+			southBlocked = southBlocked 
+				|| (inEnvironment.isAgentSouth(inEnvironment.ENEMY_TEAM,immediate)
+					&& !inEnvironment.isFlagSouth(inEnvironment.OUR_TEAM,immediate));
+			eastBlocked = eastBlocked  
+				|| (inEnvironment.isAgentEast(inEnvironment.ENEMY_TEAM,immediate)
+					&& !inEnvironment.isFlagEast(inEnvironment.OUR_TEAM,immediate));
+			westBlocked = westBlocked 
+				|| (inEnvironment.isAgentWest(inEnvironment.ENEMY_TEAM,immediate)
+					&& !inEnvironment.isFlagWest(inEnvironment.OUR_TEAM,immediate));
+		}
+		*/
+		else
 		{
 			northBlocked = northBlocked 
 				|| (inEnvironment.isAgentNorth(inEnvironment.ENEMY_TEAM,immediate)
